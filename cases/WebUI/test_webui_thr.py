@@ -9,7 +9,7 @@ def setup_teardown():
     print(f"=================Test End=================")
 
 
-def test_begin():
-    print('test_next')
+def test_webui_thr():
+    print('test_webui_thr')
     print(base.BASE_DIR)
-    # assert 1 is None
+

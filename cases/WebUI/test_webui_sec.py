@@ -9,7 +9,7 @@ def setup_teardown():
     print(f"=================Test End=================")
 
 
-def test_sec():
-    print('test_sec')
+def test_webui_sec():
+    print('test_webui_sec')
     print(base.BASE_DIR)
 

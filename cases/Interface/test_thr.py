@@ -9,7 +9,7 @@ def setup_teardown():
     print(f"=================Test End=================")
 
 
-def test_three():
-    print('test_three')
+def test_thr():
+    print('test_thr')
     print(base.BASE_DIR)
 
