@@ -1,0 +1,7 @@
+bit,xy_channel,z_dc_channel,z_flux_channel,readout_channel,probe_freq
+0,5,1,1,1,6546.2
+1,6,2,2,1,6401.2
+2,7,3,3,1,6496.4
+3,11,4,4,1,6643.2
+4,9,5,5,1,6449.6
+5,10,6,6,1,6591.2

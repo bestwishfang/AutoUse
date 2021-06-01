@@ -1,0 +1,216 @@
+# qubit auto test yaml file
+
+# system and product args
+system:
+  server_ip: 10.10.12.147                    # MongoDB IP
+  chip_num: D4-6bit_0522_dag_1               # test chip number
+  save_path: D:/chip_data                    # test data save path, f'{save_path}/{chip_num}'
+  config_path:                               # initial config file dir, default `{root_path}/config`
+  test_bit:                                  # just test one qubit
+  dcm_flag:                                  # when running some experiment, False means not use dcm
+  network_analyzer: E5071C
+  qaio_type: 8
+
+parameter:
+  # The attenuation of circuit
+  xy_power_att: 56                                              # XY attenuation
+  readout_power_att: 76                                         # readout attenuation
+  VNA_power_att: 30                                             # net analyzer attenuation
+  readout_power_att_VNA: readout_power_att + VNA_power_att      #
+  # instrument param
+  probe_power: -95 + readout_power_att                          # The power of Qaio's readout channel
+
+
+# Define all flows, and the flow include some nodes.
+flows:
+
+  # next flows must be all qubit to do
+  - initial_flow:
+#      - initial_store_node
+#      - initial_qubit_node
+
+  - tunable_flow:
+#      - is_tunable_node
+
+  # next flows just a single qubit to do
+  - cavity_detecte_flow:
+#      - update_goodness_node
+      - cavity_freq_update_node
+      - judge_tunable_goodness_node
+
+  - qubit_detecte_flow:
+      - qubit_freq_preliminary_node
+
+  - pi_pulse_detecte_flow:
+      - rabi_scan_amp_node
+
+  - readout_calibrate_flow:
+      - probe_freq_cali_node
+      - probe_power_cali_node
+      - single_shot_node
+
+  - qubit_freq_calibrate_flow:
+      - qubit_freq_calibrate_node
+
+  - qubit_optimizate_flow:
+      - rabi_update_xpi_node
+      - ape_experiment_node
+      - rabi_update_xpi_node
+      - amp_opt_node
+      - single_shot_node
+      - t1_experiment_node
+      - t2_experiment_node
+
+  - flux_regulate_flow:
+      - ac_spectrum_node
+      - t2_spectrum_node
+
+  - execute_rb_flow:
+      - execute_rb_node
+
+  - line_calibrate_flow:
+      - xyz_timing_node
+#      - distortion_node
+
+  - qubit_correcte_flow:
+#      - ac_crosstalk_node
+#      - dc_spectrum_node
+
+  - dc_crosstalk_flow:
+#      - set_not_save_qubit_node                # run dc_crosstalk_flow the node must be executed
+#      - set_qubit_Vwork_node                   # run dc_crosstalk_flow the node must be executed
+#      - probe_freq_cali_node
+#      - probe_power_cali_node
+#      - single_shot_node
+#      - qubit_freq_calibrate_node
+#      - rabi_update_xpi_node
+#      - ape_experiment_node
+#      - rabi_update_xpi_node
+#      - amp_opt_node
+#      - dc_crosstalk_node
+#      - set_save_qubit_node
+
+  - t1_spectrum_flow:
+#      - t1_spectrum_node
+
+
+# Define Experiment args
+experiments:
+
+  FindCavityFreq:
+    probe_power: -20                            # find cavity freq set probe power
+    fc_list: [ 6.3e9, 6.7e9 ]                   # cavity freq scan range, [start, end]
+    points: 1001                                # scan freq number
+    IFBW: 500                                   # The IF bandwidth of network analyzer
+
+  Tunable:
+    probe_power: -120 + readout_power_att_VNA   # is or not tunable, set probe power
+    scan_range: 5                               # is or not tunable, scan freq range of probe_freq
+    scan_flux: [ -1.2, 1.2, 0.04 ]              # scan dc list, [start, end, step]
+    points: 1001                                # scan freq number
+    IFBW: 500                                   # The IF bandwidth of network analyzer
+    threshold: 0.1                              # bit work threshold(Mhz)
+
+  CavityFreqSpectrum:
+    scan_freq: 3                                # update cavity freq, scan freq range of probe_freq
+    scan_step: 0.1                              # set freq list step
+
+  Goodness:
+    high_power: -90 + readout_power_att_VNA
+    low_power: -140 + readout_power_att_VNA
+    high_IFBW: 500
+    low_IFBW: 50
+    points: 1001
+    threshold: 0.1                               # bit work threshold(Mhz)
+
+  QubitSpectrum:
+    high_power: -85 + xy_power_att
+    low_power: -96 + xy_power_att
+    power_step: 5
+    drive_freq_list: [ 4000, 6000, 5 ]           # scan freq list, [start, end, step]
+
+  RabiSweepXpi:
+    amp_list: [ 0, 1, 0.02 ]                     # scan amp list, [start, end, step]
+    drive_power: -70 + xy_power_att              # initial give drive power
+    judge_step: 5                                # judge background noise change drive power step
+    update_step: 2                               # update Xpi change drive power step
+
+  ProbePowerCali:
+    power: -16                                   # initial power of execute SingleShot
+    power_list: [ -34, -10, 2 ]                  # list of power, scan power execute single shot
+
+  QubitFreqCali:
+    IF: 466.667                                  # IF value, normal 466.667
+    delta_list: [ 10, -10 ]                      # list of delta, likes [delta1, delta2]
+    delay_list: [ 100, 800, 10 ]                 # list of delay, [start, end, step]
+
+  APE:
+    N1_list: [ 6, 7, 8 ]                         # list of N value
+    N2_list: [ 7, 9 ]                            # list of N value
+    detune_list: [ -30e-3, 30e-3, 1e-3 ]         # list of detune, scan deteun value, [start, end, step]
+
+  AmpOptimize:
+    points: 41                                   # scan diff amp times, refer ro amp [0.9, 1.1, 0.005], points are 41
+    N_dict:
+      Xpi: 7                                     # theta is Xpi N value
+      Xpi2: 14                                   # theta is Xpi/2 N value
+
+  T1:
+    t1_delay_list: [ 200, 30000, 300 ]           # list of delay, [start, end, step]
+
+  # Run Ramsey update qubit.T2
+  T2:
+    t2_delay_list: [ 200, 20000, 200 ]           # list of delay, [start, end, step]
+
+  RandomizedBenchmarking:
+    k: 30
+    m_list:
+      - [ 2, 10, 2 ]
+      - [ 10, 50, 5 ]
+      - [ 50, 100, 10 ]
+      - [ 100, 400, 20 ]
+
+  ACSpectrum:
+    fringe: 30
+    delay_list: [ 200, 500, 5 ]
+    z_amp_list: [ -0.02, 0.4, 0.02 ]
+
+  T2Spectrum:
+    fringe: -0.5
+    delay_list: [ 200, 10000, 200 ]
+
+  XYZTiming:
+    z_amp: 0.5
+    delay_list: [ 0, 70, 0.625 ]
+
+  Distortion:
+    repeat_times: 3
+    repeat_loops:
+      - [ 3000, 0.13, 2.5 ]
+      - [ 2000, 0.17, 2.5 ]
+      - [ 1200, 0.2, 1.25 ]
+
+  ACCrosstalk:
+    v_bias: 0.15
+    init_fringe: 40
+    freq_offset: 50
+    v_bias_bound: 0.7
+    freq_threshold: [ -20, 30 ]
+    delay_list: [ 200, 500, 5 ]
+
+  DCSpectrum:
+    fringe: 30
+    delay_list: [ 200, 500, 5 ]
+    z_amp_interval: 0.02
+
+  DCCrosstalk:
+    init_fringe: 40
+    freq_offset: 50
+    v_bias_bound: 0.7
+    freq_threshold: [-20, 30]
+    delay_list: [200, 500, 5]
+
+
+  T1Spectrum:
+    z_amp_list: [ -0.3, 0.4, 0.01 ]
+    delay_list: [ 0, 40000, 400 ]
